@@ -14,6 +14,15 @@
 #include "CGSRegion.h"
 
 typedef size_t CGSSpaceID;
+typedef int CGSSpaceLevel;
+
+extern CGSSpaceLevel kCGSSpaceAbsoluteLevelDefault; // = 0
+extern CGSSpaceLevel kCGSSpaceAbsoluteLevelSetupAssistant; // = 100
+extern CGSSpaceLevel kCGSSpaceAbsoluteLevelSecurityAgent; // = 200
+extern CGSSpaceLevel kCGSSpaceAbsoluteLevelScreenLock; // = 300
+extern CGSSpaceLevel kCGSSpaceAbsoluteLevelNotificationCenterAtScreenLock; // = 400
+extern CGSSpaceLevel kCGSSpaceAbsoluteLevelBootProgress; // = 500
+extern CGSSpaceLevel kCGSSpaceAbsoluteLevelVoiceOver; // = 600
 
 /// Representations of the possible types of spaces the system can create.
 typedef enum {
@@ -112,6 +121,11 @@ CG_EXTERN CFArrayRef CGSCopySpaces(CGSConnectionID cid, CGSSpaceMask mask);
 /// Given an array of window numbers, returns the IDs of the spaces those windows lie on.
 CG_EXTERN CFArrayRef CGSCopySpacesForWindows(CGSConnectionID cid, CGSSpaceMask mask, CFArrayRef windowIDs);
 
+/// Sets the absolute level of the space (ordered absolute to all other spaces).
+CG_EXTERN void CGSSpaceSetAbsoluteLevel(CGSConnectionID cid, CGSSpaceID sid, CGSSpaceLevel level);
+
+/// Gets the absolute level of the space (ordered absolute to all other spaces).
+CG_EXTERN CGSSpaceLevel CGSSpaceGetAbsoluteLevel(CGSConnectionID cid, CGSSpaceID sid);
 
 #pragma mark - Space-Local State
 

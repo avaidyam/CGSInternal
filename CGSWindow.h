@@ -237,9 +237,14 @@ typedef enum : int {
 	kCGSFullScreenTileCapableTagBit					= 1 << 22,
 } CGSWindowTagBit;
 
+typedef struct {
+    float x;
+    float y;
+} CGSMeshPoint;
+
 struct CGSWarpPoint {
-	CGPoint localPoint;
-	CGPoint globalPoint;
+	CGSMeshPoint localPoint;
+	CGSMeshPoint globalPoint;
 };
 
 

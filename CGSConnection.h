@@ -131,6 +131,8 @@ CG_EXTERN CGError CGSRegisterForConnectionDeathNotification(CGSConnectionDeathNo
 /// application's connection to the Window Server.
 CG_EXTERN CGError CGSRemoveConnectionDeathNotification(CGSConnectionDeathNotificationProc proc);
 
+/// Dispatches notifications to the main queue for concurrent NSEvent processing.
+CG_EXTERN CGError CGSConnectionDispatchNotificationsToMainQueueIfNotMainThread(CGSConnectionID cid, BOOL value);
 
 #pragma mark - Miscellaneous Security Holes
 
