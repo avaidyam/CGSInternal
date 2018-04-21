@@ -20,7 +20,7 @@ extern CGSSpaceLevel kCGSSpaceAbsoluteLevelDefault; // = 0
 extern CGSSpaceLevel kCGSSpaceAbsoluteLevelSetupAssistant; // = 100
 extern CGSSpaceLevel kCGSSpaceAbsoluteLevelSecurityAgent; // = 200
 extern CGSSpaceLevel kCGSSpaceAbsoluteLevelScreenLock; // = 300
-extern CGSSpaceLevel kCGSSpaceAbsoluteLevelNotificationCenterAtScreenLock; // = 400
+extern CGSSpaceLevel kSLSSpaceAbsoluteLevelNotificationCenterAtScreenLock; // = 400
 extern CGSSpaceLevel kCGSSpaceAbsoluteLevelBootProgress; // = 500
 extern CGSSpaceLevel kCGSSpaceAbsoluteLevelVoiceOver; // = 600
 
@@ -64,7 +64,10 @@ typedef enum {
 ///
 ///     "type": CFNumberRef
 ///     "uuid": CFStringRef
-CG_EXTERN CGSSpaceID CGSSpaceCreate(CGSConnectionID cid, void *null, CFDictionaryRef options);
+///     "pid": CFNumberRef
+///
+/// If `unmanaged` is true, the space exists above all managed spaces owned by the Dock.
+CG_EXTERN CGSSpaceID CGSSpaceCreate(CGSConnectionID cid, BOOL unmanaged, CFDictionaryRef options);
 
 /// Removes and destroys the space corresponding to the given space ID.
 CG_EXTERN void CGSSpaceDestroy(CGSConnectionID cid, CGSSpaceID sid);
@@ -82,8 +85,8 @@ CG_EXTERN CGAffineTransform CGSSpaceGetTransform(CGSConnectionID cid, CGSSpaceID
 CG_EXTERN void CGSSpaceSetTransform(CGSConnectionID cid, CGSSpaceID space, CGAffineTransform transform);
 
 /// Gets and sets the region the space occupies.  You are responsible for releasing the region object.
-CG_EXTERN void CGSSpaceSetShape(CGSConnectionID cid, CGSSpaceID space, CGSRegionRef shape);
-CG_EXTERN CGSRegionRef CGSSpaceCopyShape(CGSConnectionID cid, CGSSpaceID space);
+CG_EXTERN void CGSSpaceSetShape(CGSConnectionID cid, CGSSpaceID space, CGSRegionObj shape);
+CG_EXTERN CGSRegionObj CGSSpaceCopyShape(CGSConnectionID cid, CGSSpaceID space);
 
 
 
@@ -91,7 +94,7 @@ CG_EXTERN CGSRegionRef CGSSpaceCopyShape(CGSConnectionID cid, CGSSpaceID space);
 
 
 /// Copies and returns a region the space occupies.  You are responsible for releasing the region object.
-CG_EXTERN CGSRegionRef CGSSpaceCopyManagedShape(CGSConnectionID cid, CGSSpaceID sid);
+CG_EXTERN CGSRegionObj CGSSpaceCopyManagedShape(CGSConnectionID cid, CGSSpaceID sid);
 
 /// Gets the type of a space.
 CG_EXTERN CGSSpaceType CGSSpaceGetType(CGSConnectionID cid, CGSSpaceID sid);
@@ -112,6 +115,9 @@ CG_EXTERN CGError CGSSetSpaceManagementMode(CGSConnectionID cid, CGSSpaceManagem
 /// Gets the ID of the space currently visible to the user.
 CG_EXTERN CGSSpaceID CGSGetActiveSpace(CGSConnectionID cid);
 
+/// Gets the ID of the space with the UUID name string.
+CG_EXTERN CGSSpaceID CGSSpaceWithName(CGSConnectionID cid, CFStringRef spaceUUID);
+
 /// Returns an array of PIDs of applications that have ownership of a given space.
 CG_EXTERN CFArrayRef CGSSpaceCopyOwners(CGSConnectionID cid, CGSSpaceID sid);
 
@@ -126,6 +132,12 @@ CG_EXTERN void CGSSpaceSetAbsoluteLevel(CGSConnectionID cid, CGSSpaceID sid, CGS
 
 /// Gets the absolute level of the space (ordered absolute to all other spaces).
 CG_EXTERN CGSSpaceLevel CGSSpaceGetAbsoluteLevel(CGSConnectionID cid, CGSSpaceID sid);
+
+/// Sets the relative level of the space (ordered relative to other spaces in the same absolute level).
+CG_EXTERN void CGSSpaceSetRelativeLevel(CGSConnectionID cid, CGSSpaceID sid, CGSSpaceLevel level);
+
+/// Gets the relative level of the space (ordered relative to other spaces in the same absolute level).
+CG_EXTERN CGSSpaceLevel CGSSpaceGetRelativeLevel(CGSConnectionID cid, CGSSpaceID sid);
 
 #pragma mark - Space-Local State
 
@@ -150,6 +162,10 @@ CG_EXTERN void CGSAddWindowsToSpaces(CGSConnectionID cid, CFArrayRef windows, CF
 
 /// Given an array of window numbers and an array of space IDs, removes each window from each space.
 CG_EXTERN void CGSRemoveWindowsFromSpaces(CGSConnectionID cid, CFArrayRef windows, CFArrayRef spaces);
+
+/// Exclusively move a window to the given space while removing it from its previous spaces.
+/// Parameters 3 and 4 are unknown.
+CG_EXTERN void CGSSpaceAddWindowsAndRemoveFromSpaces(CGSConnectionID cid, CGSSpaceID sid, void *, uint32_t);
 
 CG_EXTERN CFStringRef kCGSPackagesMainDisplayIdentifier;
 

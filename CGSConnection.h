@@ -47,6 +47,9 @@ typedef int CGSTransitionID;
 /// Gets the default connection for this process.
 CG_EXTERN CGSConnectionID CGSMainConnectionID(void);
 
+/// Likely an alias for `CGSMainConnectionID`.
+CG_EXTERN CGSConnection _CGSDefaultConnection(void);
+
 /// Creates a new connection to the Window Server.
 CG_EXTERN CGError CGSNewConnection(int unused, CGSConnectionID *outConnection);
 
@@ -187,5 +190,18 @@ typedef struct {
 typedef struct {
 	CGSTransitionID transition;
 } CGSTransitionNotificationData;
+
+
+# pragma mark - CoreProcess
+
+/// Are the processes equal?
+CG_EXTERN BOOL CPSEqualProcess(CPSProcessSerialNum *psn, CPSProcessSerialNum *psn);
+
+/// Set the process provided as the front process.
+/// arg1 is always 0x0, arg2 is always 0x900
+CG_EXTERN void CPSSetFrontProcessWithOptions(CPSProcessSerialNum *psn, uint32_t unknown1, uint32_t unknown2);
+
+/// Is the process valid?
+CG_EXTERN BOOL CGSGetProcessValidity(CGSConnectionID cid, CPSProcessSerialNum *psn);
 
 #endif /* CGS_CONNECTION_INTERNAL_H */

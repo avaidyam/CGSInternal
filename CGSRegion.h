@@ -1,133 +1,164 @@
 /*
- * Copyright (C) 2007-2008 Alacatia Labs
- * 
- * This software is provided 'as-is', without any express or implied
- * warranty.  In no event will the authors be held liable for any damages
- * arising from the use of this software.
- * 
- * Permission is granted to anyone to use this software for any purpose,
- * including commercial applications, and to alter it and redistribute it
- * freely, subject to the following restrictions:
- * 
- * 1. The origin of this software must not be misrepresented; you must not
- *    claim that you wrote the original software. If you use this software
- *    in a product, an acknowledgment in the product documentation would be
- *    appreciated but is not required.
- * 2. Altered source versions must be plainly marked as such, and must not be
- *    misrepresented as being the original software.
- * 3. This notice may not be removed or altered from any source distribution.
- * 
- * Joe Ranieri joe@alacatia.com
+ *	CGSRegion.h
+ *
+ *	CGS Region API.
+ *	Encapsulates Carbon-compatable regions.
+ *
+ *	Copyright (c) 1998, Apple Computer, Inc.
+ *	All rights reserved.
  *
  */
+#ifndef _CGSREGION_H
+#define _CGSREGION_H
 
-//
-//  Updated by Robert Widmann.
-//  Copyright © 2015-2016 CodaFi. All rights reserved.
-//  Released under the MIT license.
-//
+#include <CoreGraphics/CGGeometry.h>
+#include <CoreGraphics/CGGeometryPrivate.h>
+#include <CoreGraphics/CGSTypes.h>
 
-#ifndef CGS_REGION_INTERNAL_H
-#define CGS_REGION_INTERNAL_H
+CG_EXTERN CGError CGSNewEmptyRegion(CGSRegionObj *emptyRegion);
+CG_EXTERN CGError CGSNewRegionWithRect(const CGRect * rect,
+    CGSRegionObj *newRegion);
+CG_EXTERN CGError CGSNewRegionWithRectList(const CGRect * rect, size_t rectCount,
+    CGSRegionObj *newRegion);
+CG_EXTERN CGError CGSNewRegionWithQDRgn(/* const */ void ** pQDRgn,
+    CGSRegionObj *newRegion );
+CG_EXTERN CGError CGSReleaseRegion(const CGSRegionObj region); 
+CG_EXTERN CGError CGSGetRegionBounds(const CGSRegionObj region,
+    CGRect *rect);
+CG_EXTERN CGError CGSCopyRegion(const CGSRegionObj region,
+    CGSRegionObj *newRegion );
+CG_EXTERN CGError CGSOffsetRegion(const CGSRegionObj region,
+    CGSCoord dX, CGSCoord dY, CGSRegionObj *offsetRegion ); 
+CG_EXTERN CGError CGSInsetRegion(const CGSRegionObj region,
+    CGSCoord dX, CGSCoord dY, CGSRegionObj *insetRegion ); 
+CG_EXTERN CGError CGSIntersectRegionWithRect(const CGSRegionObj region,
+    const CGRect *rect, CGSRegionObj *intersectRegion);
+CG_EXTERN CGError CGSIntersectRegion(const CGSRegionObj regionA,
+    const CGSRegionObj regionB, CGSRegionObj *intersectRegion);
+CG_EXTERN CGError CGSUnionRegionWithRect(const CGSRegionObj region,
+    const CGRect *rect, CGSRegionObj * unionRegion);
+CG_EXTERN CGError CGSUnionRegion(const CGSRegionObj regionA,
+    const CGSRegionObj regionB, CGSRegionObj * unionRegion); 
+CG_EXTERN CGError CGSDiffRegion(const CGSRegionObj regionA,
+    const CGSRegionObj regionB, CGSRegionObj *diffRegion); 
+CG_EXTERN CGError CGSXorRegion(const CGSRegionObj regionA,
+    const CGSRegionObj regionB, CGSRegionObj *xorRegion);
+CG_EXTERN void CGSRegionRelease(CGSRegionObj region);
+    /* OBSOLETE - use CGSReleaseRegion() */
+CG_EXTERN CGSRegionObj CGSRegionRetain(CGSRegionObj region);
+    /* OBSOLETE - use CGSCopyRegion() */
 
-typedef CFTypeRef CGSRegionRef;
-typedef CFTypeRef CGSRegionEnumeratorRef;
+/*
+ * Given 4 vertices of a quadrangle, generate the region.
+ * Ordering of the vertices is unimportant.
+ * The 'inset' parameter alters rounding of the conversion process.
+ *
+ * The quadrangle must be convex.  A concave shape will get a region describing the
+ * resulting triangular convex hull. (I blew off scan trap conversion and in/out testing in the
+ * interest of getting something done quickly that would do what we actually need.)
+ */
+CG_EXTERN CGError CGSQuadrangleToRegion(CGPoint p1, CGPoint p2, CGPoint p3, CGPoint p4, CGSBoolean inset, CGSRegionObj *region) AVAILABLE_MAC_OS_X_VERSION_10_5_AND_LATER;
 
+/*
+ * If exterior == true then simplified region contains region
+ * if exterior == false then simplified region is contained by the region.
+ */
+CG_EXTERN CGError CGSSimplifyRegion(const CGSRegionObj region,
+    CGSBoolean exterior, CGSRegionObj *simpleRegion);
 
-#pragma mark - Region Lifecycle
+/*
+ * QD regions
+ */
+CG_EXTERN CGError CGSGetQDRgnLength(const CGSRegionObj region,
+    CGSByteCount *pQDRgnLength); 
+CG_EXTERN CGError CGSRegionToQDRgn(const CGSRegionObj region,
+    void * pRgnBuff, CGSByteCount buffLength);
+/*
+ * Returns errors if region is not a valid CGSRegionObj or length is a NULL
+ * pointer. On return, length is set to contain the length in bytes of the
+ * private data within the region, after the region size and bounding box.
+ */
+CG_EXTERN CGError CGSGetQDRgnScanlineDataLength(const CGSRegionObj region,
+    CGSByteCount *pQDRgScanlineDataLength);
 
+/*
+ * Returns errors if region is not a valid CGSRegionObj, dataBuffer is a
+ * NULL pointer, or region scanline data will not fit within bufferLength
+ * bytes of storage. On return, dataBuffer contains a copy of the private
+ * data within the region, after the region size and bounding box. The
+ * data is copied, as retaining a pointer into the CGSRegionObj will produce
+ * unexpected results once we start using a shared memory geometry store.
+ */
+CG_EXTERN CGError CGSRegionToQDRgnScanlineData(const CGSRegionObj region,
+    void* dataBuffer, CGSByteCount bufferLength);
 
-/// Creates a region from a `CGRect`.
-CG_EXTERN CGError CGSNewRegionWithRect(const CGRect *rect, CGSRegionRef *outRegion);
+CG_EXTERN CGSBoolean CGSPointInRegion(const CGSRegionObj region,
+    const CGPoint * point); 
+CG_EXTERN CGSBoolean CGSRectInRegion(const CGSRegionObj region,
+    const CGRect * rect); 
+CG_EXTERN CGSBoolean CGSRegionInRegion(const CGSRegionObj regionA,
+    const CGSRegionObj regionB);
+CG_EXTERN CGSBoolean CGSRegionsEqual(const CGSRegionObj regionA,
+    const CGSRegionObj regionB); 
+CG_EXTERN CGSBoolean CGSRegionIsEmpty(const CGSRegionObj region);
+CG_EXTERN CGSBoolean CGSRegionIsRectangular(const CGSRegionObj region);
+CG_EXTERN CGSBoolean CGSRegionIntersectsRect(const CGSRegionObj region,
+    CGRect rect);
+CG_EXTERN CGSBoolean CGSRegionIntersectsRegion(const CGSRegionObj regionA,
+    const CGSRegionObj regionB); 
 
-/// Creates a region from a list of `CGRect`s.
-CG_EXTERN CGError CGSNewRegionWithRectList(const CGRect *rects, int rectCount, CGSRegionRef *outRegion);
+CG_EXTERN CGSRegionEnumeratorObj CGSRegionEnumerator(CGSRegionObj region);
+CG_EXTERN CGSRegionEnumeratorObj CGSRegionEnumeratorWithDirection(CGSRegionObj region,
+    int vDir, int hDir );
+CG_EXTERN CGRect *CGSNextRect(const CGSRegionEnumeratorObj enumerator);
+    /* NULL indicates end of enumeration. */
+CG_EXTERN CGError CGSReleaseRegionEnumerator(const CGSRegionEnumeratorObj enumerator); 
+CG_EXTERN CGError CGSReleaseEnumeratorRegion(const CGSRegionEnumeratorObj enumerator); 
+    /* OBSOLETE - use CGSReleaseRegionEnumerator() */
 
-/// Creates a new region from a QuickDraw region.
-CG_EXTERN CGError CGSNewRegionWithQDRgn(RgnHandle region, CGSRegionRef *outRegion);
+CG_EXTERN CGSRegionEnumeratorObj CGSRegionPathEnumerator(const CGSRegionObj region);
+CG_EXTERN int CGSNextPoint(const CGSRegionEnumeratorObj enumerator, CGPoint* point);
+    /* < 0 indicates moveto, > 0 indicated lineto, == 0 indicated end of enumeration */
 
-/// Creates an empty region.
-CG_EXTERN CGError CGSNewEmptyRegion(CGSRegionRef *outRegion);
+/* Debugging aids */
+CG_EXTERN uint32_t _CGSRegionsAllocated(void);
+CG_EXTERN uint32_t _CGSRegionEnumsAllocated(void);
 
-/// Releases a region.
-CG_EXTERN CGError CGSReleaseRegion(CGSRegionRef region);
+/* Simple bounding shape approximation */
+typedef struct _CGSBoundingShape CGSBoundingShape;
 
+CG_EXTERN CGSBoundingShape *CGSBoundingShapeCreate(void);
+CG_EXTERN CGError CGSBoundingShapeRelease(CGSBoundingShape *shape);
+CG_EXTERN CGError CGSBoundingShapeReset(CGSBoundingShape *shape);
+CG_EXTERN CGError CGSBoundingShapeAdd(CGSBoundingShape *shape,
+    int x, int y, int w, int h);
+CG_EXTERN CGError CGSBoundingShapeAddRect(CGSBoundingShape *shape,
+    const CGRect* rect);
+CG_EXTERN CGError CGSBoundingShapeAddRegion(CGSBoundingShape *shape,
+    const CGSRegionObj region);
+CG_EXTERN CGError CGSBoundingShapeGetRegion(CGSBoundingShape *shape,
+    CGSRegionObj *newRegion);
+CG_EXTERN CGError CGSBoundingShapeGetRegionWithOrdering(CGSBoundingShape *shape,
+    int dX, int dY, int W, int H, CGSRegionObj *newRegion);
+CG_EXTERN CGError CGSBoundingShapeGetBounds(CGSBoundingShape *shape,
+    CGRect* rect);
+CG_EXTERN CGSBoolean CGSBoundingShapeIsEmpty(CGSBoundingShape *shape);
 
-#pragma mark - Creating Complex Regions
+/* Region/Bitmap Conversion */
+CG_EXTERN CGError CGSRegionFromBitmap(
+    size_t bitsPerPixel, size_t bitPosition, size_t bitsPerSample, size_t min, size_t max,
+    int x, int y, int w, int h, void* data, int bytesPerRow, CGSRegionObj* region);
+CG_EXTERN CGError CGSRegionToBitmap(CGSRegionObj region, 
+    size_t bitsPerPixel, size_t bitPosition, size_t bitsPerSample, size_t bitPattern,
+    int x, int y, int w, int h, void* data, int bytesPerRow);
 
+/* Region raw data access - exported for QuickDraw use */
+/* Used to extract data for encoding regions for RPC */
+CG_EXTERN CGSError CGSGetRegionData( const CGSRegionObj region,
+        void ** regionInfo, CGSByteCount *regionLength );
 
-/// Created a new region by changing the origin an existing one.
-CG_EXTERN CGError CGSOffsetRegion(CGSRegionRef region, CGFloat offsetLeft, CGFloat offsetTop, CGSRegionRef *outRegion);
+/* Used to convert data passed by RPC into a region object */
+CG_EXTERN CGSError CGSNewRegionWithData(void * regionInfo, CGSByteCount regionLength,
+        CGSRegionObj *newRegion );
 
-/// Creates a new region by copying an existing one.
-CG_EXTERN CGError CGSCopyRegion(CGSRegionRef region, CGSRegionRef *outRegion);
-
-/// Creates a new region by combining two regions together.
-CG_EXTERN CGError CGSUnionRegion(CGSRegionRef region1, CGSRegionRef region2, CGSRegionRef *outRegion);
-
-/// Creates a new region by combining a region and a rect.
-CG_EXTERN CGError CGSUnionRegionWithRect(CGSRegionRef region, CGRect *rect, CGSRegionRef *outRegion);
-
-/// Creates a region by XORing two regions together.
-CG_EXTERN CGError CGSXorRegion(CGSRegionRef region1, CGSRegionRef region2, CGSRegionRef *outRegion);
-
-/// Creates a `CGRect` from a region.
-CG_EXTERN CGError CGSGetRegionBounds(CGSRegionRef region, CGRect *outRect);
-
-/// Creates a rect from the difference of two regions.
-CG_EXTERN CGError CGSDiffRegion(CGSRegionRef region1, CGSRegionRef region2, CGSRegionRef *outRegion);
-
-
-#pragma mark - Comparing Regions
-
-
-/// Determines if two regions are equal.
-CG_EXTERN bool CGSRegionsEqual(CGSRegionRef region1, CGSRegionRef region2);
-
-/// Determines if a region is inside of a region.
-CG_EXTERN bool CGSRegionInRegion(CGSRegionRef region1, CGSRegionRef region2);
-
-/// Determines if a region intersects a region.
-CG_EXTERN bool CGSRegionIntersectsRegion(CGSRegionRef region1, CGSRegionRef region2);
-
-/// Determines if a rect intersects a region.
-CG_EXTERN bool CGSRegionIntersectsRect(CGSRegionRef obj, const CGRect *rect);
-
-
-#pragma mark - Checking for Membership
-
-
-/// Determines if a point in a region.
-CG_EXTERN bool CGSPointInRegion(CGSRegionRef region, const CGPoint *point);
-
-/// Determines if a rect is in a region.
-CG_EXTERN bool CGSRectInRegion(CGSRegionRef region, const CGRect *rect);
-
-
-#pragma mark - Checking Region Characteristics
-
-
-/// Determines if the region is empty.
-CG_EXTERN bool CGSRegionIsEmpty(CGSRegionRef region);
-
-/// Determines if the region is rectangular.
-CG_EXTERN bool CGSRegionIsRectangular(CGSRegionRef region);
-
-
-#pragma mark - Region Enumerators
-
-
-/// Gets the enumerator for a region.
-CG_EXTERN CGSRegionEnumeratorRef CGSRegionEnumerator(CGSRegionRef region);
-
-/// Releases a region enumerator.
-CG_EXTERN void CGSReleaseRegionEnumerator(CGSRegionEnumeratorRef enumerator);
-
-/// Gets the next rect of a region.
-CG_EXTERN CGRect *CGSNextRect(CGSRegionEnumeratorRef enumerator);
-
-
-/// DOCUMENTATION PENDING */
-CG_EXTERN CGError CGSFetchDirtyScreenRegion(CGSConnectionID cid, CGSRegionRef *outDirtyRegion);
-
-#endif /* CGS_REGION_INTERNAL_H */
+#endif /* _CGSREGION_H */

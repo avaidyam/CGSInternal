@@ -36,8 +36,14 @@
 typedef CFTypeRef CGSAnimationRef;
 typedef CFTypeRef CGSWindowBackdropRef;
 typedef struct CGSWarpPoint CGSWarpPoint;
+typedef uint32_t CGSWindowCount;
+typedef uint32_t CGSWindowID;
+typedef CGSWindowID* CGSWindowIDList;
+
+#define kCGSNullWindowID 0
 
 #define kCGSRealMaximumTagSize (sizeof(void *) * 8)
+#define kCGSMaximumWindowTagBits (sizeof(void *) * 8)
 
 typedef enum {
 	kCGSSharingNone,
@@ -247,19 +253,18 @@ struct CGSWarpPoint {
 	CGSMeshPoint globalPoint;
 };
 
-
 #pragma mark - Creating Windows
 
 
 /// Creates a new CGSWindow.
 ///
 /// The real window top/left is the sum of the region's top/left and the top/left parameters.
-CG_EXTERN CGError CGSNewWindow(CGSConnectionID cid, CGSBackingType backingType, CGFloat left, CGFloat top, CGSRegionRef region, CGWindowID *outWID);
+CG_EXTERN CGError CGSNewWindow(CGSConnectionID cid, CGSBackingType backingType, CGFloat left, CGFloat top, CGSRegionObj region, CGWindowID *outWID);
 
 /// Creates a new CGSWindow.
 ///
 /// The real window top/left is the sum of the region's top/left and the top/left parameters.
-CG_EXTERN CGError CGSNewWindowWithOpaqueShape(CGSConnectionID cid, CGSBackingType backingType, CGFloat left, CGFloat top, CGSRegionRef region, CGSRegionRef opaqueShape, int unknown, CGSWindowTagBit *tags, int tagSize, CGWindowID *outWID);
+CG_EXTERN CGError CGSNewWindowWithOpaqueShape(CGSConnectionID cid, CGSBackingType backingType, CGFloat left, CGFloat top, CGSRegionObj region, CGSRegionObj opaqueShape, int unknown, CGSWindowTagBit *tags, int tagSize, CGWindowID *outWID);
 
 /// Releases a CGSWindow.
 CG_EXTERN CGError CGSReleaseWindow(CGSConnectionID cid, CGWindowID wid);
@@ -289,10 +294,10 @@ CG_EXTERN CGError CGSSetWindowAlpha(CGSConnectionID cid, CGWindowID wid, CGFloat
 
 /// Sets the shape of the window and describes how to redraw if the bounding
 /// boxes don't match.
-CG_EXTERN CGError CGSSetWindowShapeWithWeighting(CGSConnectionID cid, CGWindowID wid, CGFloat offsetX, CGFloat offsetY, CGSRegionRef shape, CGSWindowSaveWeighting weight);
+CG_EXTERN CGError CGSSetWindowShapeWithWeighting(CGSConnectionID cid, CGWindowID wid, CGFloat offsetX, CGFloat offsetY, CGSRegionObj shape, CGSWindowSaveWeighting weight);
 
 /// Sets the shape of the window.
-CG_EXTERN CGError CGSSetWindowShape(CGSConnectionID cid, CGWindowID wid, CGFloat offsetX, CGFloat offsetY, CGSRegionRef shape);
+CG_EXTERN CGError CGSSetWindowShape(CGSConnectionID cid, CGWindowID wid, CGFloat offsetX, CGFloat offsetY, CGSRegionObj shape);
 
 /// Gets and sets a Boolean value indicating whether the window is opaque.
 CG_EXTERN CGError CGSGetWindowOpacity(CGSConnectionID cid, CGWindowID wid, bool *outIsOpaque);
@@ -303,8 +308,8 @@ CG_EXTERN CGError CGSCopyWindowColorSpace(CGSConnectionID cid, CGWindowID wid, C
 CG_EXTERN CGError CGSSetWindowColorSpace(CGSConnectionID cid, CGWindowID wid, CGColorSpaceRef colorSpace);
 
 /// Gets and sets the window's clip shape.
-CG_EXTERN CGError CGSCopyWindowClipShape(CGSConnectionID cid, CGWindowID wid, CGSRegionRef *outRegion);
-CG_EXTERN CGError CGSSetWindowClipShape(CGWindowID wid, CGSRegionRef shape);
+CG_EXTERN CGError CGSCopyWindowClipShape(CGSConnectionID cid, CGWindowID wid, CGSRegionObj *outRegion);
+CG_EXTERN CGError CGSSetWindowClipShape(CGSConnectionID cid, CGWindowID wid, CGSRegionObj shape);
 
 /// Gets and sets the window's transform. 
 ///
@@ -315,14 +320,22 @@ CG_EXTERN CGError CGSSetWindowClipShape(CGWindowID wid, CGSRegionRef shape);
 CG_EXTERN CGError CGSGetWindowTransform(CGSConnectionID cid, CGWindowID wid, const CGAffineTransform *outTransform);
 CG_EXTERN CGError CGSSetWindowTransform(CGSConnectionID cid, CGWindowID wid, CGAffineTransform transform);
 
-/// Gets and sets the window's transform in place. 
+#define kCGSAffineTransformApp 0x0
+#define kCGSAffineTransformHiDPI 0x10000000
+#define kCGSAffineTransformSystemOverride 0x20000000
+
+/// Gets and sets the window's transform at an indicated placement.
 ///
-///	Severe restrictions are placed on transformation:
-/// - Transformation Matrices may only include a singular transform.
-/// - Transformations involving scale may not scale upwards past the window's frame.
-/// - Transformations involving rotation must be followed by translation or the window will fall offscreen.
-CG_EXTERN CGError CGSGetWindowTransformAtPlacement(CGSConnectionID cid, CGWindowID wid, const CGAffineTransform *outTransform);
-CG_EXTERN CGError CGSSetWindowTransformAtPlacement(CGSConnectionID cid, CGWindowID wid, CGAffineTransform transform);
+/// Possible placement values are kCGSAffineTransformApp, kCGSAffineTransformHiDPI, or kCGSAffineTransformSystemOverride.
+CG_EXTERN CGError CGSGetWindowTransformAtPlacement(CGSConnectionID cid, CGWindowID wid, uint64_t placement, void *unknown, const CGAffineTransform *outTransform);
+CG_EXTERN CGError CGSSetWindowTransformAtPlacement(CGSConnectionID cid, CGWindowID wid, uint64_t placement, void *unknown, CGAffineTransform transform);
+
+/// Gets the concatenated window transform (that is, of all the placements possible).
+/// This is the final transform the window will be rendered on-screen with.
+CG_EXTERN CGError CGSGetCatenatedWindowTransform(CGSConnectionID cid, CGWindowID wid, const CGAffineTransform *outTransform);
+
+/// Sets the transforms of multiple windows.
+CG_EXTERN CGError CGSSetWindowTransforms(CGSConnectionID cid, CGSWindowID *wids, CGAffineTransform *transform, int n);
 
 /// Gets and sets the `CGConnectionID` that owns this window. Only the owner can change most properties of the window.
 CG_EXTERN CGError CGSGetWindowOwner(CGSConnectionID cid, CGWindowID wid, CGSConnectionID *outOwner);
@@ -332,7 +345,7 @@ CG_EXTERN CGError CGSSetWindowOwner(CGSConnectionID cid, CGWindowID wid, CGSConn
 CG_EXTERN CGError CGSSetWindowAutofillColor(CGSConnectionID cid, CGWindowID wid, CGFloat red, CGFloat green, CGFloat blue);
 
 /// Sets the warp for the window. The mesh maps a local (window) point to a point on screen.
-CG_EXTERN CGError CGSSetWindowWarp(CGSConnectionID cid, CGWindowID wid, int warpWidth, int warpHeight, const CGSWarpPoint *warp);
+CG_EXTERN CGError CGSSetWindowWarp(CGSConnectionID cid, CGWindowID wid, int warpWidth, int warpHeight, const CGSWarpPoint *warp); // TODO: Looks like it's just `const float*`?
 
 /// Gets or sets whether the Window Server should auto-fill the window's background.
 CG_EXTERN CGError CGSGetWindowAutofill(CGSConnectionID cid, CGWindowID wid, bool *outShouldAutoFill);
@@ -366,7 +379,7 @@ CG_EXTERN CGError CGSSetWindowActive(CGSConnectionID cid, CGWindowID wid, bool i
 #pragma mark - Handling Events
 
 /// DEPRECATED: Sets the shape over which the window can capture events in its frame rectangle.
-CG_EXTERN CGError CGSSetWindowEventShape(CGSConnectionID cid, CGSBackingType backingType, CGSRegionRef *shape);
+CG_EXTERN CGError CGSSetWindowEventShape(CGSConnectionID cid, CGSBackingType backingType, CGSRegionObj *shape);
 
 /// Gets and sets the window's event mask.
 CG_EXTERN CGError CGSGetWindowEventMask(CGSConnectionID cid, CGWindowID wid, CGEventMask *mask);
@@ -391,7 +404,7 @@ CG_EXTERN CGError CGSGetScreenRectForWindow(CGSConnectionID cid, CGWindowID wid,
 CG_EXTERN CGContextRef CGWindowContextCreate(CGSConnectionID cid, CGWindowID wid, CFDictionaryRef options);
 
 /// Flushes a window's buffer to the screen.
-CG_EXTERN CGError CGSFlushWindow(CGSConnectionID cid, CGWindowID wid, CGSRegionRef flushRegion);
+CG_EXTERN CGError CGSFlushWindow(CGSConnectionID cid, CGWindowID wid, CGSRegionObj flushRegion);
 
 
 #pragma mark - Window Order
@@ -474,10 +487,10 @@ CG_EXTERN CGError CGSSetWindowListAlpha(CGSConnectionID cid, const CGWindowID *w
 
 
 /// Sets the shape over which the window can capture events in its frame rectangle.
-CG_EXTERN CGError CGSAddActivationRegion(CGSConnectionID cid, CGWindowID wid, CGSRegionRef region);
+CG_EXTERN CGError CGSAddActivationRegion(CGSConnectionID cid, CGWindowID wid, CGSRegionObj region);
 
 /// Sets the shape over which the window can recieve mouse drag events.
-CG_EXTERN CGError CGSAddDragRegion(CGSConnectionID cid, CGWindowID wid, CGSRegionRef region);
+CG_EXTERN CGError CGSAddDragRegion(CGSConnectionID cid, CGWindowID wid, CGSRegionObj region);
 
 /// Removes any shapes over which the window can be dragged.
 CG_EXTERN CGError CGSClearDragRegion(CGSConnectionID cid, CGWindowID wid);
@@ -576,5 +589,29 @@ CG_EXTERN void CGSWindowBackdropSetSaturation(CGSWindowBackdropRef backdrop, CGF
 
 /// Sets the bleed for the window's backdrop effect.  Vibrant NSWindows use ~0.2.
 CG_EXTERN void CGSWindowSetBackdropBackgroundBleed(CGWindowID wid, CGFloat bleedAmount) AVAILABLE_MAC_OS_X_VERSION_10_10_AND_LATER;
+
+
+# pragma mark - Packages
+
+
+///
+CG_EXTERN CGError CGSPackagesEnableConnectionOcclusionNotifications(CGSConnectionID, bool flag, bool* outCurrentVisibilityState);
+
+///
+CG_EXTERN CGError CGSPackagesEnableConnectionWindowModificationNotifications(CGSConnectionID, bool flag, bool* outConnectionIsCurrentlyIdle);
+
+
+# pragma mark - CGContext
+
+
+struct CGWindowContextInfo {
+    CGSConnectionID cid;
+    CGWindowID wid;
+};
+typedef struct CGWindowContextInfo *CGWindowContextInfoRef;
+typedef void *CGContextDelegateRef;
+
+typedef CGContextDelegateRef (*CGWindowContextDelegateCreateCallback)(CGWindowContextInfoRef windowContextInfo,
+                                                                      CFDictionaryRef dict);
 
 #endif /* CGS_WINDOW_INTERNAL_H */

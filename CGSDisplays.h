@@ -50,6 +50,12 @@ typedef struct {
 	CGFloat scale;
 } CGSDisplayModeDescription;
 
+enum {
+    kCGSWindowCaptureNominalResolution = 0x0200,
+    kCGSCaptureIgnoreGlobalClipShape = 0x0800,
+};
+typedef uint32_t CGSWindowCaptureOptions;
+
 typedef int CGSDisplayMode;
 
 
@@ -73,7 +79,7 @@ CG_EXTERN CGError CGSGetDisplaysWithPoint(const CGPoint *point, int maxDisplayCo
 CG_EXTERN CGError CGSGetDisplaysWithRect(const CGRect *point, int maxDisplayCount, CGDirectDisplayID *outDisplays, int *outDisplayCount);
 
 /// Gets the bounds for the display. Note that multiple displays can have the same bounds - think mirroring.
-CG_EXTERN CGError CGSGetDisplayRegion(CGDirectDisplayID display, CGSRegionRef *outRegion);
+CG_EXTERN CGError CGSGetDisplayRegion(CGDirectDisplayID display, CGSRegionObj *outRegion);
 CG_EXTERN CGError CGSGetDisplayBounds(CGDirectDisplayID display, CGRect *outRect);
 
 /// Gets the number of bytes per row.
@@ -82,14 +88,27 @@ CG_EXTERN CGError CGSGetDisplayRowBytes(CGDirectDisplayID display, int *outRowBy
 /// Returns an array of dictionaries describing the spaces each screen contains.
 CG_EXTERN CFArrayRef CGSCopyManagedDisplaySpaces(CGSConnectionID cid);
 
+/// Get the current space displayed by the managed display.
+/// arg2 is also possibly of type `CGManagedDisplayID` instead of `CFStringRef`.
+CG_EXTERN CGSSpaceID CGSManagedDisplayGetCurrentSpace(CGSConnectionID cid, CFStringRef displayIdentifier);
+
 /// Gets the current display mode for the display.
 CG_EXTERN CGError CGSGetCurrentDisplayMode(CGDirectDisplayID display, int *modeNum);
+
+/// Determine whether the space (`spaceUUID`) allows the window `wid`.
+CG_EXTERN BOOL CGSManagedDisplayCurrentSpaceAllowsWindow(CGSConnectionID cid, CFStringRef spaceUUID, CGWindowID wid);
 
 /// Gets the number of possible display modes for the display.
 CG_EXTERN CGError CGSGetNumberOfDisplayModes(CGDirectDisplayID display, int *nModes);
 
 /// Gets a description of the mode of the display.
 CG_EXTERN CGError CGSGetDisplayModeDescriptionOfLength(CGDirectDisplayID display, int idx, CGSDisplayModeDescription *desc, int length);
+
+///
+CG_EXTERN size_t CGDisplayModeGetPixelsWide(CGDisplayModeRef);
+
+///
+CG_EXTERN size_t CGDisplayModeGetPixelsHigh(CGDisplayModeRef);
 
 /// Sets a display's configuration mode.
 CG_EXTERN CGError CGSConfigureDisplayMode(CGDisplayConfigRef config, CGDirectDisplayID display, int modeNum);
@@ -99,6 +118,12 @@ CG_EXTERN CGDisplayErr CGSGetOnlineDisplayList(CGDisplayCount maxDisplays, CGDir
 
 /// Gets a list of active displays */
 CG_EXTERN CGDisplayErr CGSGetActiveDisplayList(CGDisplayCount maxDisplays, CGDirectDisplayID *displays, CGDisplayCount *outDisplayCount);
+
+/// Returns the display identifier for the display that holds the active menu bar.
+CG_EXTERN CFStringRef CGSCopyActiveMenuBarDisplayIdentifier(CGSConnectionID cid);
+
+/// Get the display's UUID.
+CG_EXTERN BOOL CGSCopyDisplayUUID(CGDirectDisplayID display, CFUUID *uuidOut);
 
 
 #pragma mark - Display Configuration
@@ -122,5 +147,11 @@ CG_EXTERN CGDisplayErr CGSCancelDisplayConfiguration(CGDisplayConfigRef config);
 
 /// Queries the Window Server about the status of the query.
 CG_EXTERN CGError CGSDisplayStatusQuery(CGDirectDisplayID display, CGSDisplayQuery query);
+
+///
+CG_EXTERN CFArrayRef CGSHWCaptureWindowList(CGSConnectionID, CGSWindowIDList windowList, CGSWindowCount, CGSWindowCaptureOptions);
+
+/// DOCUMENTATION PENDING */
+CG_EXTERN CGError CGSFetchDirtyScreenRegion(CGSConnectionID cid, CGSRegionObj *outDirtyRegion);
 
 #endif /* CGS_DISPLAYS_INTERNAL_H */

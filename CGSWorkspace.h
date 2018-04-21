@@ -39,6 +39,9 @@ typedef unsigned int CGSWorkspaceID;
 /// The space ID given when we're switching spaces.
 static const CGSWorkspaceID kCGSTransitioningWorkspaceID = 65538;
 
+/// The space name/identifier for the first workspace.
+CG_EXTERN CFStringRef kCGSWorkspaceFirstUserSpaceIdentifier;
+
 /// Gets and sets the current workspace.
 CG_EXTERN CGError CGSGetWorkspace(CGSConnectionID cid, CGSWorkspaceID *outWorkspace);
 CG_EXTERN CGError CGSSetWorkspace(CGSConnectionID cid, CGSWorkspaceID workspace);

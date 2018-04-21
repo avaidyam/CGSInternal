@@ -18,6 +18,7 @@ typedef unsigned long long CGSEventRecordTime;  /* nanosecond timer */
 typedef unsigned long CGSEventFlag;
 typedef unsigned long  CGSError;
 
+//typedef CF_ENUM(uint32_t, CGSNotificationType)
 typedef enum : unsigned int {
 	kCGSDisplayWillReconfigure = 100,
 	kCGSDisplayDidReconfigure = 101,
@@ -114,12 +115,13 @@ typedef enum : unsigned int {
 	kCGSWindowIsVisible = 815,
 	kCGSWindowIsInvisible = 816,
 
+    kCGSFirstConnectionNotification = 900,
 	kCGSLikelyUnbalancedDisableUpdateNotification = 902,
 
 	kCGSConnectionWindowsBecameVisible = 904,
 	kCGSConnectionWindowsBecameOccluded = 905,
-	kCGSConnectionWindowModificationsStarted = 906,
-	kCGSConnectionWindowModificationsStopped = 907,
+	kCGSConnectionWindowModificationsStarted = kCGSFirstConnectionNotification + 6,
+	kCGSConnectionWindowModificationsStopped = kCGSFirstConnectionNotification + 7,
 
 	kCGSWindowBecameVisible = 912,
 	kCGSWindowBecameOccluded = 913,
@@ -157,8 +159,9 @@ typedef enum : unsigned int {
 	kCGSWorkspacesWindowDidOrderInOnNonCurrentManagedSpacesOnly = 1415,
 	kCGSWorkspacesWindowDidOrderOutOnNonCurrentManagedSpaces = 1416,
 
-	kCGSessionConsoleConnect = 1500,
-	kCGSessionConsoleDisconnect = 1501,
+    kCGSFirstSessionNotification = 1500,
+	kCGSessionConsoleConnect = kCGSFirstSessionNotification,
+	kCGSessionConsoleDisconnect = kCGSFirstSessionNotification + 1,
 	kCGSessionRemoteConnect = 1502,
 	kCGSessionRemoteDisconnect = 1503,
 	kCGSessionLoggedOn = 1504,
@@ -204,6 +207,63 @@ CG_EXTERN CGError CGSRegisterConnectionNotifyProc(CGSConnectionID cid, CGConnect
 /// Unregisters a function that was registered to receive notifications for connection-level events.
 CG_EXTERN CGError CGSRemoveConnectionNotifyProc(CGSConnectionID cid, CGConnectionNotifyProc function, CGSEventType event, void *userData);
 
+# pragma mark - CGEventFields
+
+static const CGEventField kCGSEventWindowIDField = (CGEventField)51;
+static const CGEventField kCGSEventTypeField = (CGEventField)55;
+static const CGEventField kCGEventGestureHIDType = (CGEventField)110;
+static const CGEventField kCGEventGestureIsPreflight = (CGEventField)111;
+static const CGEventField kCGEventGestureZoomValue = (CGEventField)113;
+static const CGEventField kCGEventGestureRotationValue = (CGEventField)114;
+static const CGEventField kCGEventGestureSwipeValue = (CGEventField)115;
+static const CGEventField kCGEventGesturePreflightProgress = (CGEventField)116;
+static const CGEventField kCGEventGestureStartEndSeriesType = (CGEventField)117;
+static const CGEventField kCGEventGestureScrollX = (CGEventField)118;
+static const CGEventField kCGEventGestureScrollY = (CGEventField)119;
+static const CGEventField kCGEventGestureScrollZ = (CGEventField)120;
+static const CGEventField kCGEventGestureSwipeMotion = (CGEventField)123;
+static const CGEventField kCGEventGestureSwipeProgress = (CGEventField)124;
+static const CGEventField kCGEventGestureSwipePositionX = (CGEventField)125;
+static const CGEventField kCGEventGestureSwipePositionY = (CGEventField)126;
+static const CGEventField kCGEventGestureSwipeVelocityX = (CGEventField)129;
+static const CGEventField kCGEventGestureSwipeVelocityY = (CGEventField)130;
+static const CGEventField kCGEventGestureSwipeVelocityZ = (CGEventField)131;
+static const CGEventField kCGEventGesturePhase = (CGEventField)132;
+static const CGEventField kCGEventGestureMask = (CGEventField)133;
+static const CGEventField kCGEventGestureSwipeMask = (CGEventField)134;
+static const CGEventField kCGEventScrollGestureFlagBits = (CGEventField)135;
+static const CGEventField kCGEventSwipeGestureFlagBits = (CGEventField)136;
+static const CGEventField kCGEventGestureFlavor = (CGEventField)138;
+static const CGEventField kCGEventGestureZoomDeltaX = (CGEventField)139;
+static const CGEventField kCGEventGestureZoomDeltaY = (CGEventField)140;
+static const CGEventField kCGEventGestureProgress = (CGEventField)142;
+static const CGEventField kCGEventGestureStage = (CGEventField)143;
+static const CGEventField kCGEventGestureBehavior = (CGEventField)144;
+static const CGEventField kCGEventTransitionProgress = (CGEventField)147;
+static const CGEventField kCGEventStagePressure = (CGEventField)148;
+
+enum {
+    kCGSEventScrollWheel = 22,
+    kCGSEventZoom = 28,
+    kCGSEventGesture = 29,
+    kCGSEventDockControl = 30,
+    kCGSEventFluidTouchGesture = 31,
+};
+typedef uint32_t CGSEventType;
+
+enum {
+    kCGHIDEventTypeGestureStarted = 61,
+    kCGHIDEventTypeGestureEnded = 62,
+};
+typedef uint32_t CGSHIDEventType;
+
+///
+CGPoint CGEventGetWindowLocation(CGEventRef);
+
+///
+void CGEventSetWindowLocation(CGEventRef, CGPoint);
+
+# pragma mark - CGSEventRecord
 
 typedef struct _CGSEventRecord {
 	CGSEventRecordVersion major; /*0x0*/

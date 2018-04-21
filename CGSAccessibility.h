@@ -39,6 +39,13 @@
 /// Gets whether the display is zoomed.
 CG_EXTERN CGError CGSIsZoomed(CGSConnectionID cid, bool *outIsZoomed);
 
+/// Get the zoom factor and smoothing.
+CG_EXTERN CGError CGSGetZoomParameters(CGSConnectionID cid, CGPoint *origin, double *zoomFactor, int8_t *smoothed);
+
+/// Set the zoom factor and smoothing.
+CG_EXTERN CGError CGSSetZoomParameters(CGSConnectionID cid, CGPoint *origin, double zoomFactor, int8_t smoothed);
+
+
 
 #pragma mark - Invert Colors
 
