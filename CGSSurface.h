@@ -14,6 +14,12 @@
 
 typedef int CGSSurfaceID;
 
+#define CGSSurfaceTypeNone 0x0
+#define CGSSurfaceTypeOpenGL 0x1 /* UNKNOWN */
+#define CGSSurfaceTypeIOAccel 0x2
+#define CGSSurfaceTypeWindow 0x3 /* UNKNOWN */
+#define CGSSurfaceTypeCAContext 0x4
+
 
 #pragma mark - Surface Lifecycle
 
@@ -24,10 +30,18 @@ CG_EXTERN CGError CGSAddSurface(CGSConnectionID cid, CGWindowID wid, CGSSurfaceI
 /// Removes a drawable surface from a window.
 CG_EXTERN CGError CGSRemoveSurface(CGSConnectionID cid, CGWindowID wid, CGSSurfaceID sid);
 
-/// Binds a CAContext to a surface.
-///
-/// Pass ctx the result of invoking -[CAContext contextId].
-CG_EXTERN CGError CGSBindSurface(CGSConnectionID cid, CGWindowID wid, CGSSurfaceID sid, int x, int y, unsigned int ctx);
+/// Binds a drawable surface in a window.
+/// Type may be one of the following:
+///   - `CGSSurfaceTypeNone`: `flags` must be `0` and `args` must be `NULL`.
+///   - `CGSSurfaceTypeOpenGL`: `flags` must be `0` and `args` is the texture.
+///   - `CGSSurfaceTypeIOAccel`: `flags` must be `0` and `args` is the result of `IOAccelCreateSurface`.
+///   - `CGSSurfaceTypeWindow`: `flags` must be `0` and `args` is another window id.
+///   - `CGSSurfaceTypeCAContext`: `flags` must be `0` and `args` is `CAContext.contextId`.
+CG_EXTERN CGError CGSBindSurface(CGSConnectionID cid, CGWindowID wid, CGSSurfaceID sid, int type, int flags, void *args);
+
+/// Gets the drawable surface's binding in a window.
+/// See `CGSBindSurface` for result information.
+CG_EXTERN CGError CGSGetSurfaceBounds(CGSConnectionID cid, CGWindowID wid, CGSSurfaceID sid, void *binding);
 
 #pragma mark - Surface Properties
 
